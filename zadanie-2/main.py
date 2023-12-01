@@ -5,8 +5,7 @@ from collections import Counter
 from clp3 import clp
 from scipy import sparse
 
-dir_1 = './teksty-na-dowolny-temat'
-dir_2 = './teksty-o-świnkach-morskich'
+dir_1 = './teksty-o-świnkach-morskich'
 
 
 def tf(text):
@@ -16,13 +15,12 @@ def tf(text):
         id = clp(words[i])
         if id:
             words[i] = clp.bform(id[0])
-            # print(word)
     word_counter = Counter(words)
     t_f = dict(word_counter)
 
     for key, value in t_f.items():
         t_f[key] = value / tf_base
-    # dodać w marshalu krotkę: pierwsza wartosć to ilość słów w tekście, druga to słownik t_f
+
     return t_f
 
 
@@ -67,22 +65,34 @@ def idf_tfidf(matrix):
     return idf_result, tfidf_result
 
 
-def get_result():
-    pass
+def get_result(words, matrix, text_names):
+    words = np.array(words)
+    result = []
+
+    top_10_words = np.argsort(matrix, axis=1)[:, -10:]
+    top_10_results = np.sort(matrix, axis=1)[:, -10:]
+    for text in range(len(text_names)):
+        row = [text_names[text]]
+        for i in range(len(top_10_words[0])):
+            row.append((words[top_10_words[text][i]], top_10_results[text][i]))
+        row = [row[0]] + row[1:][::-1]
+        result.append(row)
+    result = tuple(result)
+
+    return result
 
 
 def read_files(directory):
     corpus_matrix = []
-    all_texts = ''
-    i = 0
+    filenames = []
     for filename in os.listdir(directory):
-        # 0print(filename)
         if filename.endswith('.txt'):
             try:
                 with open(os.path.join(directory, filename), 'r', encoding='utf-8') as file:
                     text = file.read()
                     text = re.sub(r'[\d\W_]', ' ', text)
                     t_f = tf(text)
+                    filenames.append(filename)
 
                     if corpus_matrix:
                         corpus_matrix = add_row(filename, t_f, corpus_matrix)
@@ -92,23 +102,22 @@ def read_files(directory):
                         corpus_matrix.append(initial_row)
                         corpus_matrix.append(row)
 
-                    # ogranicznik
-                    # if i == 30:
-                    #     break
-                    # i += 1
-
             except FileNotFoundError:
                 print('Plik nie został znaleziony')
 
+    texts = tuple(filenames)
     word_list = corpus_matrix[0].copy()
     del word_list[0]
 
     idf, tfidf = idf_tfidf(corpus_matrix)
 
-    result = get_result()
+    results = get_result(word_list, tfidf, texts)
+
+    for result in results:
+        print(result)
+
+    return results
 
 
-
-
-read_files(dir_2)
+read_files(dir_1)
 
