@@ -42,9 +42,9 @@ def tf(text):
     tf_base = len(words)
 
     for i in range(len(words)):
-        id = clp(words[i])
-        if id:
-            words[i] = clp.bform(id[0])
+        clp_id = clp(words[i])
+        if clp_id:
+            words[i] = clp.bform(clp_id[0])
     word_counter = Counter(words)
     t_f = dict(word_counter)
 
